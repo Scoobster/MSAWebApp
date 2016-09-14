@@ -1,5 +1,5 @@
 html { 
-    background: url("https://pixabay.com/static/uploads/photo/2015/12/25/20/32/sky-1107952_960_720.jpg") no-repeat center center fixed; 
+    background: url("https://static.pexels.com/photos/167529/pexels-photo-167529.jpeg") no-repeat center center fixed; 
     -webkit-background-size: cover;
     -moz-background-size: cover;
     -o-background-size: cover;
@@ -38,13 +38,10 @@ body #page-container {
     margin-bottom: 40px;
 }
 
-.btn-wrapper {
+.input-wrapper {
     padding: 20px 0;
 }
 
-input#my-file-selector {
-    display:none;
-}
 
 #musicplayer{
     padding:20px;

@@ -1,92 +1,206 @@
-declare var SC:any; // Magic - tells that there is some variable SC out there (SC is from the SoundCloud script file)
+declare var SC:any;
 
-var currentMood: Mood;
+var currentWeather: Weather;
 declare var $: any;
 
-//..................
-// Get elements from DOM
-var pageheader = $("#page-header")[0]; //note the [0], jQuery returns an object, so to get the html DOM object we need the first item in the object
+
+var pageheader = $("#page-header")[0];
 var pagecontainer = $("#page-container")[0]; 
 
-// The html DOM object has been casted to a input element (as defined in index.html) as later we want to get specific fields that are only avaliable from an input element object
-var imgSelector : HTMLInputElement = <HTMLInputElement> $("#my-file-selector")[0]; 
-var refreshbtn = $("#refreshbtn")[0]; //You dont have to use [0], however this just means whenever you use the object you need to refer to it with [0].
+//var imgSelector : HTMLInputElement = <HTMLInputElement> $("#my-file-selector")[0];
+var refreshbtn = $("#refreshbtn")[0];
 
-// Register button listeners
-imgSelector.addEventListener("change", function () { // file has been picked
-    pageheader.innerHTML = "Just a sec while we analyse your mood...";
-    processImage(function (file) { //this checks the extension and file
-        // Get emotions based on image
-        sendEmotionRequest(file, function (emotionScores) { //here we send the API request and get the response
-            // Find out most dominant emotion
-            currentMood = getCurrMood(emotionScores); //this is where we send out scores to find out the predominant emotion
-            changeUI(); //time to update the web app, with their emotion!
-
-            loadSong(currentMood); // Load random song based on mood
-            //Done!!
-        });
-    });
+var ac = new google.maps.places.Autocomplete(document.getElementById('location-autocomplete'));
+google.maps.event.addListener(ac, 'place_changed', function () {
+    var place = ac.getPlace();
+    if (!place.geometry) {
+        window.alert("Autocomplete's returned place contains no geometry");
+        return;
+    }
+    updateWeather(place);
+    changeUI();
+    loadSong(currentWeather);
 });
+
+
+class Weather {
+    name: string;
+    icon: string;
+    constructor(public mood, public iconurl) {
+        this.name = mood;
+        this.icon = iconurl;
+    }
+}
+
+
+var sun: Weather = new Weather("Sunny", "http://megaicons.net/static/img/icons_sizes/8/178/512/weather-sun-icon.png");
+var rain: Weather = new Weather("Rainy", "https://cdn2.iconfinder.com/data/icons/windows-8-metro-style/512/rain.png");
+var cloud: Weather = new Weather("Cloudy", "https://pixabay.com/static/uploads/photo/2013/04/01/09/22/clouds-98536_960_720.png");
+var snow: Weather = new Weather("Snowy", "http://downloadicons.net/sites/default/files/heavy-snow-icon-23780.png");
+var wind: Weather = new Weather("Windy", "https://cdn3.iconfinder.com/data/icons/weather-icons-8/512/weather-windy-512.png");
+
+
+function updateWeather(place: any) {
+
+    var weatherdata;
+
+    var lat = place.geometry.location.lat;
+    var lon = place.geometry.location.lon;
+    var htmlString = "http://api.openweathermap.org/data/2.5/weather?lat=" + lat + "&lon=" + lon + "&units=metric&APPID=6c69b96b52f88bd394675c9785644a3e";
+
+    loadJSON(htmlString, function (data) {
+        weatherdata = data;
+    });
+
+    getWeather(weatherdata);
+
+}
+
+function getWeather(weatherdata) {
+
+    if (weatherdata.id > 956 || weatherdata.id == 900 || weatherdata.id == 905 || weatherdata.id == 781) {
+        currentWeather = wind;
+    } else if ((weatherdata.id > 600 && weatherdata.id < 623) || weatherdata.id == 906) {
+        currentWeather = snow;
+    } else if (weatherdata.id == 800 || weatherdata.id == 801 || weatherdata.id == 904 || (weatherdata.id > 950 && weatherdata.id < 957)) {
+        currentWeather = sun;
+    } else if (weatherdata.id < 600 || weatherdata.id == 901 || weatherdata.id == 902) {
+        currentWeather = rain;
+    } else {
+        currentWeather = cloud;
+    }
+
+}
+
+
+function changeUI(): void {
+
+    pageheader.innerHTML = "The weather is: " + currentWeather.name;
+
+    var img: HTMLImageElement = <HTMLImageElement>$("#selected-img")[0];
+    img.src = currentWeather.icon;
+    img.style.display = "block";
+
+    refreshbtn.style.display = "inline";
+
+    pagecontainer.style.marginTop = "20px";
+}
+
+class Song {
+    title: string;
+    url: string;
+    constructor(songtitle: string, songurl: string) {
+        this.title = songtitle;
+        this.url = songurl;
+    }
+}
+
 
 refreshbtn.addEventListener("click", function () {
-    // Load random song based on mood
-    loadSong(currentMood);
+    loadSong(currentWeather);
 });
 
-function processImage(callback) : void {
-    var file = imgSelector.files[0];  //get(0) is required as imgSelector is a jQuery object so to get the DOM object, its the first item in the object. files[0] refers to the location of the photo we just chose.
-    var reader = new FileReader();
-    if (file) {
-        reader.readAsDataURL(file); //used to read the contents of the file
-    } else {
-        console.log("Invalid file");
+class Playlist {
+    sun: Song[];
+    cloud: Song[];
+    rain: Song[];
+    wind: Song[];
+    snow: Song[];
+
+    constructor() {
+        this.sun = [];
+        this.cloud = [];
+        this.rain = [];
+        this.wind = [];
+        this.snow = [];
     }
-    reader.onloadend = function () { 
-        //After loading the file it checks if extension is jpg or png and if it isnt it lets the user know.
-        if (!file.name.match(/\.(jpg|jpeg|png)$/)){
-            pageheader.innerHTML = "Please upload an image file (jpg or png).";
-        } else {
-            //if file is photo it sends the file reference back up
-            callback(file);
+
+    addSong(weather: string, song: Song): void {
+        if (weather === "sun") {
+            this.sun.push(song);
+        } else if (weather === "cloud") {
+            this.cloud.push(song);
+        } else if (weather === "rain") {
+            this.rain.push(song);
+        } else if (weather === "wind") {
+            this.wind.push(song);
+        } else if (weather === "snow") {
+            this.snow.push(song);
+        } 
+    }
+
+    getRandSong(weather: string): Song {
+        if (weather === "sun") { 
+            return this.sun[Math.floor(Math.random() * this.sun.length)];
+        } else if (weather === "cloud") {
+            return this.cloud[Math.floor(Math.random() * this.cloud.length)];
+        } else if (weather === "rain") {
+            return this.rain[Math.floor(Math.random() * this.rain.length)];
+        } else if (weather === "wind") {
+            return this.wind[Math.floor(Math.random() * this.wind.length)];
+        } else if (weather === "snow") {
+            return this.snow[Math.floor(Math.random() * this.snow.length)];
         }
     }
 }
 
-function changeUI() : void {
-    //Show detected mood
-    pageheader.innerHTML = "Your mood is: " + currentMood.name;  //Remember currentMood is a Mood object, which has a name and emoji linked to it. 
-    //Show mood emoji
-    var img : HTMLImageElement = <HTMLImageElement>  $("#selected-img")[0];//getting a predefined area on our webpage to show the emoji
-    img.src = currentMood.emoji; //link that area to the emoji of our currentMood.
-    img.style.display = "block"; //just some formating of the emoji's location
 
-    //Display song refresh button
-    refreshbtn.style.display = "inline";
-    //Remove offset at the top
-    pagecontainer.style.marginTop = "20px";
+/*
+imgSelector.addEventListener("change", function () {
+    pageheader.innerHTML = "Please wait while I determine the current weather";
+    processImage(function (file) {
+
+        sendEmotionRequest(file, function (emotionScores) {
+            
+            currentWeather = getCurrMood(emotionScores); 
+            changeUI();
+
+            loadSong(currentWeather);
+            
+        });
+    });
+});*/
+
+
+/*
+function processImage(callback) : void {
+    var file = imgSelector.files[0];
+    var reader = new FileReader();
+    if (file) {
+        reader.readAsDataURL(file);
+    } else {
+        console.log("Invalid file");
+    }
+    reader.onloadend = function () { 
+        
+        if (!file.name.match(/\.(jpg|jpeg|png)$/)){
+            pageheader.innerHTML = "Please upload an image file (jpg or png).";
+        } else {
+            callback(file);
+        }
+    }
 }
+*/
 
-// Refer to http://stackoverflow.com/questions/35565732/implementing-microsofts-project-oxford-emotion-api-and-file-upload
-// and code snippet in emotion API documentation
-function sendEmotionRequest(file, callback) : void {
+
+function sendEmotionRequest(file, callback): void {
+    
     $.ajax({
-        url: "https://api.projectoxford.ai/emotion/v1.0/recognize",
+        url: htmlString,
         beforeSend: function (xhrObj) {
-            // Request headers
             xhrObj.setRequestHeader("Content-Type", "application/octet-stream");
             xhrObj.setRequestHeader("Ocp-Apim-Subscription-Key", "d342c8d19d4e4aafbf64ed9f025aecc8");
         },
-        type: "POST",
+        type: "json",
         data: file,
         processData: false
     })
         .done(function (data) {
-            if (data.length != 0) { // if a face is detected
-                // Get the emotion scores
+            if (data.length != 0) { 
                 var scores = data[0].scores;
                 callback(scores);
             } else {
-                pageheader.innerHTML = "Hmm, we can't detect a human face in that photo. Try another?";
+                pageheader.innerHTML = "Hmm, we can't detect that location. Try another?";
             }
         })
         .fail(function (error) {
@@ -95,122 +209,46 @@ function sendEmotionRequest(file, callback) : void {
         });
 }
 
-// Section of code that handles the mood
-
-//A Mood class which has the mood as a string and its corresponding emoji
-class Mood {
-    name: string;
-    emoji: string;
-    constructor(public mood, public emojiurl) {
-        this.name = mood;
-        this.emoji = emojiurl;
-    }
-}
-
-
-var happy : Mood = new Mood("happy", "http://emojipedia-us.s3.amazonaws.com/cache/a0/38/a038e6d3f342253c5ea3c057fe37b41f.png");
-var sad : Mood  = new Mood("sad", "https://cdn.shopify.com/s/files/1/1061/1924/files/Sad_Face_Emoji.png?9898922749706957214");
-var angry : Mood = new Mood("angry", "https://cdn.shopify.com/s/files/1/1061/1924/files/Very_Angry_Emoji.png?9898922749706957214");
-var neutral : Mood  = new Mood("neutral", "https://cdn.shopify.com/s/files/1/1061/1924/files/Neutral_Face_Emoji.png?9898922749706957214");
-
-
-// any type as the scores values is from the project oxford api request (so we dont know the type)
-function getCurrMood(scores : any) : Mood {
-    // In a practical sense, you would find the max emotion out of all the emotions provided. However we'll do the below just for simplicity's sake :P
-    if (scores.happiness > 0.4) {
-        currentMood = happy;
-    } else if (scores.sadness > 0.4) {
-        currentMood = sad;
-    } else if (scores.anger > 0.4) {
-        currentMood = angry;
-    } else {
-        currentMood = neutral;
-    }
-    return currentMood;
-}
-
-// Section of code that handles the music and soundcloud
-
-//A Song class which has the song's name and URL on soundcloud
-class Song {
-    title: string;
-    url: string;
-    constructor(songtitle : string, songurl : string) {
-        this.title = songtitle;
-        this.url = songurl;
-    }
-}
-
-//A Playlist class which holds various amount of songs for each different mood
-class Playlist {
-    happy: Song[];
-    sad: Song[];
-    angry: Song[];
-
-    constructor() {
-        this.happy = [];
-        this.sad = [];
-        this.angry = [];
-    }
-
-    addSong(mood : string, song : Song) : void {
-        // depending on the mood we want to add it to its corresponding list in our playlist
-        if (mood === "happy") {
-            this.happy.push(song); // this means the value of happy of the playlist object that got invoked the method "addSong"
-        } else if (mood === "sad") {
-            this.sad.push(song);
-        } else if (mood === "angry") {
-            this.angry.push(song);
-        } // do a default one as well
-    }
-
-    getRandSong(mood : string) : Song {
-        if (mood === "happy" || mood === "neutral") { // we have happy and neutral as getting songs from happy
-            return this.happy[Math.floor(Math.random() * this.happy.length)];
-        } else if (mood === "sad") {
-            return this.sad[Math.floor(Math.random() * this.sad.length)];
-        } else if (mood === "angry") {
-            return this.angry[Math.floor(Math.random() * this.angry.length)];
-        } 
-    }
-}
-
 var myPlaylist : Playlist;
 
 function init() : void {
     // init playlist
     myPlaylist = new Playlist();
 
-    myPlaylist.addSong("happy", new Song("Animals", "https://soundcloud.com/martingarrix/martin-garrix-animals-original")); // Song name and the url of the song on SoundCloud
-    myPlaylist.addSong("happy", new Song("Good feeling", "https://soundcloud.com/anderia/flo-rida-good-feeling"));
-    myPlaylist.addSong("happy", new Song("Megalovania", "https://soundcloud.com/angrysausage/toby-fox-undertale"));
-    myPlaylist.addSong("happy", new Song("On top of the world", "https://soundcloud.com/interscope/imagine-dragons-on-top-of-the"));
-    myPlaylist.addSong("sad", new Song("How to save a life", "https://soundcloud.com/jelenab-1/the-fray-how-to-save-a-life-7"));
-    myPlaylist.addSong("sad", new Song("Divenire", "https://soundcloud.com/djsmil/ludovico-einaudi-divenire"));
-    myPlaylist.addSong("sad", new Song("Stay High", "https://soundcloud.com/musaradian/our-last-night-habitsstay-hightove-lo"));
-    myPlaylist.addSong("angry", new Song("When they come for me", "https://soundcloud.com/heoborus/when-they-come-for-me-linkin-park"));
-    myPlaylist.addSong("angry", new Song("One Step Closer", "https://soundcloud.com/user1512165/linkin-park-one-step-closer"));
-    myPlaylist.addSong("angry", new Song("Somewhere I belong", "https://soundcloud.com/mandylinkinparkmusic2xd/somewhere-i-belong"));
+    myPlaylist.addSong("sun", new Song("California Gurls", "https://soundcloud.com/katyperry/california-gurls-feat-snoop"));
+    myPlaylist.addSong("sun", new Song("Walking on Sunshine", "https://soundcloud.com/katrina-and-the-waves/walking-on-sunshine-25th-anniversary-edition"));
+    myPlaylist.addSong("sun", new Song("You are my Sunshine", "https://soundcloud.com/capj1970-2/bob-dylan-and-johnny-cash-you"));
+    myPlaylist.addSong("rain", new Song("She will be loved", "https://soundcloud.com/maroon-5/she-will-be-loved-radio-mix"));
+    myPlaylist.addSong("rain", new Song("Singing in the Rain", "https://soundcloud.com/luan-jobs/singing-in-the-rain-frank"));
+    myPlaylist.addSong("rain", new Song("A Hard Rain's A-Gonna Fall", "https://soundcloud.com/bobdylan/a-hard-rains-a-gonna-fall"));
+    myPlaylist.addSong("wind", new Song("Blowing in the Wind", "https://soundcloud.com/tummeng_090/peter-paul-and-mary-blowing-in"));
+    myPlaylist.addSong("wind", new Song("Wind Beneath My Wings", "https://soundcloud.com/bettemidler/wind-beneath-my-wings-1"));
+    myPlaylist.addSong("wind", new Song("Bohemian Rhapsody", "https://soundcloud.com/queen-69312/bohemian-rhapsody-remastered-1"));
+    myPlaylist.addSong("snow", new Song("Snow (Hey Oh)", "https://soundcloud.com/red-hot-chili-peppers-official/snow-hey-oh"));
+    myPlaylist.addSong("snow", new Song("Let It Snow", "https://soundcloud.com/ladyantebellum/let-it-snow-let-it-snow-let-it"));
+    myPlaylist.addSong("snow", new Song("Winter Wonderland", "https://soundcloud.com/michaelbuble/winter-wonderland-bonus-track"));
+    myPlaylist.addSong("cloud", new Song("California Gurls", "https://soundcloud.com/katyperry/california-gurls-feat-snoop"));
+    myPlaylist.addSong("cloud", new Song("She will be loved", "https://soundcloud.com/maroon-5/she-will-be-loved-radio-mix"));
+    myPlaylist.addSong("cloud", new Song("Bohemian Rhapsody", "https://soundcloud.com/queen-69312/bohemian-rhapsody-remastered-1"));
 
     // init soundcloud
     initSC();
 }
 
-function loadSong(currentMood : Mood) : void {
-    var songSelected : Song = myPlaylist.getRandSong(currentMood.name); // gets a random song based on the moodd
+function loadSong(currentWeather : Weather) : void {
+    var songSelected : Song = myPlaylist.getRandSong(currentWeather.name);
     var track_url : string = songSelected.url; 
 
-    $("#track-name")[0].innerHTML = "Have a listen to: " + songSelected.title; // display the song being played
-    $("#track-name")[0].style.display = "block"; // changing this style to block makes it appear (before was set to none so it wasnt seen)
+    $("#track-name")[0].innerHTML = "This seems like an appropriate track: " + songSelected.title;
+    $("#track-name")[0].style.display = "block";
     $("#musicplayer")[0].style.display = "block";
 
-    loadPlayer(track_url); // load soundcloud player to play this song
+    loadPlayer(track_url);
 }
 
 var myClientId = "8f2bba4a309b295e1f74ee38b8a5017b";
 
 function initSC() : void {
-    // init SoundCloud
     SC.initialize({
         client_id: myClientId
     });
@@ -219,9 +257,8 @@ function initSC() : void {
 function loadPlayer(trackurl : string) : void {
     SC.oEmbed(trackurl, { auto_play: true }).then(function (oEmbed) {
         var div = $("#musicplayer")[0]; 
-        div.innerHTML = oEmbed.html; // puts the soundcloud player inside the musicplayer div
+        div.innerHTML = oEmbed.html;
     });
 }
 
-// Initialise playlist and soundcloud
 init();
