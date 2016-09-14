@@ -1,7 +1,9 @@
 declare var SC:any; // Magic - tells that there is some variable SC out there (SC is from the SoundCloud script file)
 
 var currentMood: Mood;
+declare var $: any;
 
+//..................
 // Get elements from DOM
 var pageheader = $("#page-header")[0]; //note the [0], jQuery returns an object, so to get the html DOM object we need the first item in the object
 var pagecontainer = $("#page-container")[0]; 

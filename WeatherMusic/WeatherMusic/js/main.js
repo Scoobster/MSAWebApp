@@ -1,4 +1,5 @@
 var currentMood;
+//..................
 // Get elements from DOM
 var pageheader = $("#page-header")[0]; //note the [0], jQuery returns an object, so to get the html DOM object we need the first item in the object
 var pagecontainer = $("#page-container")[0];
@@ -197,3 +198,4 @@ function loadPlayer(trackurl) {
 }
 // Initialise playlist and soundcloud
 init();
+//# sourceMappingURL=main.js.map
