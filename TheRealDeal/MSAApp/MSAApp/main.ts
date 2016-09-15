@@ -53,7 +53,7 @@ function fetchData(forecast) {
 
     var sun: Weather = new Weather("Sunny", "http://megaicons.net/static/img/icons_sizes/8/178/512/weather-sun-icon.png");
     var rain: Weather = new Weather("Rainy", "https://cdn2.iconfinder.com/data/icons/windows-8-metro-style/512/rain.png");
-    var cloud: Weather = new Weather("Cloudy", "https://pixabay.com/static/uploads/photo/2013/04/01/09/22/clouds-98536_960_720.png");
+    var cloud: Weather = new Weather("Cloudy", "http://www.pd4pic.com/images/clouds-cloudy-overcast-weather-forecast-night-sky.png");
     var snow: Weather = new Weather("Snowy", "http://downloadicons.net/sites/default/files/heavy-snow-icon-23780.png");
     var wind: Weather = new Weather("Windy", "https://cdn3.iconfinder.com/data/icons/weather-icons-8/512/weather-windy-512.png");
 

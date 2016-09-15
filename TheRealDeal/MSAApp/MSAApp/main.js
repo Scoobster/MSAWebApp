@@ -21,7 +21,7 @@ var Weather = (function () {
         this.icon = iconurl;
     }
     return Weather;
-})();
+}());
 function getData(place) {
     console.log("Getting Place Data");
     var cityName = place.address_components[3].long_name;
@@ -42,7 +42,7 @@ function getData(place) {
 function fetchData(forecast) {
     var sun = new Weather("Sunny", "http://megaicons.net/static/img/icons_sizes/8/178/512/weather-sun-icon.png");
     var rain = new Weather("Rainy", "https://cdn2.iconfinder.com/data/icons/windows-8-metro-style/512/rain.png");
-    var cloud = new Weather("Cloudy", "https://pixabay.com/static/uploads/photo/2013/04/01/09/22/clouds-98536_960_720.png");
+    var cloud = new Weather("Cloudy", "http://www.pd4pic.com/images/clouds-cloudy-overcast-weather-forecast-night-sky.png");
     var snow = new Weather("Snowy", "http://downloadicons.net/sites/default/files/heavy-snow-icon-23780.png");
     var wind = new Weather("Windy", "https://cdn3.iconfinder.com/data/icons/weather-icons-8/512/weather-windy-512.png");
     var weatherdata, currentWeather;
@@ -83,7 +83,7 @@ var Song = (function () {
         this.url = songurl;
     }
     return Song;
-})();
+}());
 refreshbtn.addEventListener("click", function () {
     loadSong(cWeather);
 });
@@ -138,7 +138,7 @@ var Playlist = (function () {
         return returnSong;
     };
     return Playlist;
-})();
+}());
 var myPlaylist;
 function init() {
     // init playlist
@@ -186,4 +186,13 @@ function loadPlayer(trackurl) {
     });
 }
 init();
+(function (d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id))
+        return;
+    js = d.createElement(s);
+    js.id = id;
+    js.src = "//connect.facebook.net/en_GB/sdk.js#xfbml=1&version=v2.7";
+    fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));
 //# sourceMappingURL=main.js.map
